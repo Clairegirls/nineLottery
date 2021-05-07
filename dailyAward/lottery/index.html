@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>每日抽奖</title>
+
+    <link rel="stylesheet" href="../../imgs/css/vant.css"/>
+    <link rel="stylesheet" type="text/css" href="../../imgs/css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="main.css?v6" />
+
+    <script>
+      let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
+      // 获取html的dom
+      let htmlDom = document.getElementsByTagName('html')[0];
+      // 设置html的font-size
+      htmlDom.style.fontSize = htmlWidth / 10 + 'px';
+      window.addEventListener('resize', (e) => {
+        let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
+        htmlDom.style.fontSize = htmlWidth / 10 + 'px';
+      });
+    </script>
+    <style>
+      *{
+        padding: 0;
+        margin: 0;
+      }
+      .van-popup{
+        background: none;
+      }
+      [v-cloak] {
+        display: none;
+      }
+      body{
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+  <div id="app" v-cloak>
+    <van-popup v-model="show"
+               position="bottom"
+               :overlay="false"
+               class="award_popup">
+      <div class="act_bg">
+        <div class="act_con">
+          <div class="prizewinner_list">
+            <van-swipe :show-indicators="false"
+                       :autoplay="2000"
+                       :loop="true"
+                       vertical>
+              <van-swipe-item v-for="(item,index) in userlist" :key="index">
+                {{pageData.gx}}<span>{{item.nickname}}</span>{{pageData.cz}}<span class="prize1">【<span class="prize">{{item.prize}}</span>】</span>!
+              </van-swipe-item>
+            </van-swipe>
+          </div>
+          <div class="rule_btn">
+            <div class="rule_btn_bg"
+                 @click="$('#shade_rule').css('display','flex')"></div>
+          </div>
+          <div class="gift_box">
+            <div class="gift_box_bg gift_box_bg2" id="gift_box_bg">
+  <!--            <p id='prize'></p>-->
+              <div class="gift_item">
+                <div v-for="(prize,index) in prizelist" class="gift_icon">
+<!--                  <span :id="'gift'+prize.turnId" :class="index==0?'aa':''">-->
+                  <span :id="'gift'+prize.turnId" >
+                    <div class="gift_img"><img :src="prize.image"/></div>
+                    <div class="gift_tit">{{prize.prizename}}</div>
+                    <div class="gift_num">{{prize.num}}</div>
+<!--                    <div class="light_icon"><img src="img/light_icon.png"/></div>-->
+                  </span>
+                  <span v-if="index==3" id="start_btn" @click="startLottery">
+                  <div class="go_btn">
+                    <img v-if="render.current_coin<200"  src="../img/go.png"/>
+                    <img v-else :id="turnType?'go_btn':''"  src="img/go.png"/>
+                  </div>
+                    <div class="go_star">
+                      <div class="star"><img src="img/star.png"></div>
+                      <div>200</div>
+                    </div>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="star_count">
+            <span class="star_num">
+              <span><img src="img/star.png"/></span>
+              <span>{{render.current_coin}}</span>
+            </span>
+
+
+            <a class="collect_star collect_star1" @click="taskList=true">{{render.task_tips_status==0?pageData.get_star1:pageData.lqxx}}</a>
+          </div>
+      </div>
+      </div>
+    </van-popup>
+    <van-popup v-model="taskList"
+               position="bottom"
+               class="task_popup">
+        <div class="task_wrap">
+          <div @click="taskList=false" class="top_close"><img src="img/close1.png"/> </div>
+          <div class="task_box" id="task_box" v-for="(task,index) in tasklist">
+            <div class="task_left">
+              <div class="task_img"><img :src="task.image"/></div>
+              <div class="task_text">
+                <div class="task_name">{{task.name}}</div>
+                <div class="task_star">
+                  <div class="star_icon"><img src="img/star.png"/></div>
+                  <div class="add_star">+{{task.prize}}</div>
+                </div>
+              </div>
+            </div>
+            <!--          0 未完成 1 已完成未领取 2 已完成-->
+            <div v-if="task.status==0" @click="jump2native(task.btn_info.uri_type, task.btn_info.uri_param)" class="task_get">{{task.btn_info.title}}</div>
+            <div v-if="task.status==1"
+                 class="task_get task_get1" @click="getTask(task.id)">{{task.btn_info.title}}</div>
+            <div v-if="task.status==2" class="task_get task_get2">{{task.btn_info.title}}</div>
+          </div>
+        </div>
+
+      <div id="tips">{{pageData.collect_successfully}}</div>
+    </van-popup>
+      <div id="shade_box">
+          <div class="shade-con">
+            <div class="shade-tit">{{pageData.gxhd}}</div>
+            <div class="img-wrap">
+              <img :src="award.image">
+              <div class="award-name">{{award.name}}</div>
+            </div>
+            <div class="get-btn" @click="closeDialog">确定</div>
+        </div>
+      </div>
+      <div id="shade_rule">
+        <div class="shade_rule_con">
+          <div class="shade_rule_top">
+            <div class="shade-tit">{{pageData.play_info}}</div>
+            <div class="close_icon"
+                 @click="$('#shade_rule').css('display','none')">
+              <img src="img/close.png"/>
+            </div>
+          </div>
+          <div class="rule_con">
+            <div class="rule_text">
+              <p>{{pageData.info0}}</p>
+              <p>{{pageData.info1}}</p>
+              <p>{{pageData.info2}}</p>
+            </div>
+            <div class="award_table">
+              <table>
+                <tr class="award_table_tit">
+                  <th class="tit1">{{pageData.tit0}}</th>
+                  <th class="tit2">{{pageData.tit1}}</th>
+                  <th class="tit3">{{pageData.tit2}}</th>
+                </tr>
+                <tr v-for="(award,index) in pageData.awardTable">
+                  <td>{{award.name}}</td>
+                  <td>{{award.info}}</td>
+                  <td>{{award.probability}}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+  </div>
+  <script type="text/javascript" src="../../imgs/js/jquery-1.11.1.min.js?v=1.0.1"></script>
+  <script type="text/javascript" src="../../imgs/js/vue.min.js?v=1.0.1"></script>
+  <script type="text/javascript" src="../../imgs/js/vant.js?v=1.0.1"></script>
+  <script src="../../library/constants.js?v=1.0.1" type="text/javascript"></script>
+  <script src="../../library/util.js?v=1.0.1" type="text/javascript"></script>
+  <script src="main.js?v=1.0.5" type="text/javascript"></script>
+  <script>
+    $(document).ready(function(){
+      window.setInterval(toggleBg,1000);
+
+      function toggleBg() {
+        $('#gift_box_bg').toggleClass('gift_box_bg2');
+      }
+    })
+  </script>
+  </body>
+</html>
